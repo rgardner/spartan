@@ -134,13 +134,13 @@ def _save_reducer(ex, tile, axis, path = None, prefix = None, iszip = None):
 
     fp.write(cnt)
     if sparse:
-        tile = tile.tocoo()
-        save = np.savez_compressed if iszip else np.savez
-        kw['isnp'] = True
-        save(save_filename(**kw), row = tile.row, col = tile.col,
-             data = tile.data, shape = tile.shape)
+      tile = tile.tocoo()
+      save = np.savez_compressed if iszip else np.savez
+      kw['isnp'] = True
+      save(save_filename(**kw), row = tile.row, col = tile.col,
+           data = tile.data, shape = tile.shape)
     else:
-        fp.write(tile.data)
+      fp.write(tile.data)
     fp.close()
   except Exception as e:
     util.log_error('Save %s tile(%s, %s) failed : %s', prefix, ex.ul, ex.lr, e)
@@ -189,7 +189,7 @@ def save(array, prefix, path = '.', iszip = False):
                     accumulate_fn = np.multiply,
                     fn_kw={'prefix': prefix, 'path' : path, 'iszip': iszip}))
 
-  return True if ret == 1 else False
+  return ret == 1
 
 def _load_mapper(array, ex, prefix = None, path = None, sparse = None, dtype = None, iszip = None):
   kw = {'path' : path, 'prefix' : prefix, 'suffix' : '',
@@ -204,7 +204,7 @@ def _load_mapper(array, ex, prefix = None, path = None, sparse = None, dtype = N
     fp = open(fn, 'r')
 
   # In current implementation, these information are redundent
-  # we don't use them, but keep themfor the future.
+  # we don't use them, but keep them for the future.
   cnt = fp.read(8)  # Magic number and version
   dlen = fp.read(2) # Length of the dictionary
   dlen = ord(dlen[0]) + ord(dlen[1]) * 256
@@ -310,7 +310,7 @@ def pickle(array, prefix, path = '.', iszip=False):
                     accumulate_fn = np.multiply,
                     fn_kw={'path' : path, 'prefix': prefix, 'iszip' : iszip}))
 
-  return True if ret == 1 else False
+  return ret == 1
 
 def _unpickle_mapper(array, ex, path = None, prefix = None, iszip = None):
   kw = {'path' : path, 'prefix' : prefix, 'suffix' : '',
@@ -438,4 +438,3 @@ def partial_unpickle(extents, prefix, path = ".", iszip = False):
 
   '''
   return _partial_load(path, prefix, extents, iszip, True)
-
