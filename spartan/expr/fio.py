@@ -49,10 +49,45 @@ from .reduce import reduce
 from .shuffle import shuffle
 
 
-def save_filename(**kw):
+MAGIC_PREFIX = asbytes('\x93NUMPY')
+MAGIC_LEN = len(MAGIC_PREFIX) + 2
+MAGIC_VERSION = (1, 0)
+
+def magic(major, minor):
+  '''Return the magic string for the given file format version.
+
+  :param major: int
+    [0, 255]
+  :param minor: int
+    [0, 255]
+
+  :ret: str
+
   '''
-  Return the path to write a save file to, based on the
-  input parameters.
+  if major < 0 or major > 255:
+    raise ValueError("major version must be 0 <= major < 256")
+  if minor < 0 or minor > 255:
+    raise ValueError("minor version must be 0 <= minor < 256")
+  if sys.version_info[0] < 3:
+    return MAGIC_PREFIX + chr(major) + chr(minor)
+  else:
+    return MAGIC_PREFIX + bytes([major, minor])
+
+def save_filename(**kw):
+  '''Return path to write a file to, based on input parameters.
+
+  :param path:
+  :param prefix:
+  :param ul:
+  :param lr:
+  :param suffix:
+  :param isnp:
+  :param ispickle:
+  :param iszip:
+
+  :ret: str
+    The path to write the file to.
+
   '''
   #TODO(fegin): change this to use default arguments instead of kw and add comments
   fn = kw['path'] + "/" + kw['prefix'] + "/" + kw['prefix'] +  \
@@ -73,11 +108,11 @@ def _save_reducer(ex, tile, axis, path = None, prefix = None, iszip = None):
   if not os.path.exists(path + '/' + prefix):
     os.makedirs(path + '/' + prefix)
 
-  sparse = True if sp.issparse(tile) else False
+  sparse = sp.issparse(tile)
   tile_dict = {'ul' : ex.ul, 'lr' : ex.lr, 'shape' : tile.shape,
                'dtype' : str(tile.dtype),
                'type' : "SPARSE" if sparse else "DENSITY"}
-  cnt = "\x93NUMPY\x01\x00"   # Magic Number & Version
+  cnt = magic(*MAGIC_VERSION)
   # Dictionary
   dict_cnt = str(tile_dict)
   if (len(cnt) + 2 + len(dict_cnt)) % 16 != 0:
